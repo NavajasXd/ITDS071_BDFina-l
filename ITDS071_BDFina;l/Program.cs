@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,6 +20,7 @@ namespace ITDS071_BDFina_l
                 Registros = registros;
                 Ruta = ruta;
             }
+
             public string Nombre {  get; set; }
             public string[] Titulos { get; set; }
             public List<String> Registros { get; set; }
@@ -29,21 +32,45 @@ namespace ITDS071_BDFina_l
         {
             Tabla Ingredientes = new Tabla(
                 "Ingredientes",
-                new string[] {"ID", "Nombre"},
+                new string[] {"ID", "Nombre", "Contenido", "Cantidad"},
                 new List<string> {},
-                "C:\\Users\\bmigu\\source\\repos\\ITDS071_BDFina;l\\ITDS071_BDFina;l\\BD_Ingredientes.txt"
+                Path.GetFullPath("..\\..\\Datos\\BD_Ingredientes.txt")
                 );
+            IngresarRegistrosATabla(Ingredientes);
 
-            Console.WriteLine(Ingredientes.Nombre);
-            foreach (string titulo in Ingredientes.Titulos)
-            {
-                Console.WriteLine(titulo);
-            }
+            Tabla Platillos = new Tabla(
+                "Platillos",
+                new string[] { "ID", "Nombre", "Precio", "Costo" },
+                new List<string> { },
+                Path.GetFullPath("..\\..\\Datos\\BD_Platillos.txt")
+                );
+            IngresarRegistrosATabla(Platillos);
+
+            Tabla Recetas = new Tabla(
+                "Recetas",
+                new string[] {"Platillo_ID", "Ingrediente_ID", "Cantidad"},
+                new List<string> { },
+                Path.GetFullPath("..\\..\\Datos\\BD_Recetas.txt")
+                );
+            IngresarRegistrosATabla(Recetas);
+
+            Console.WriteLine(Platillos.Ruta);
         }
 
-        static void IngresarRegistrosATabla(Tabla tabla, string ruta)
+        static void IngresarRegistrosATabla(Tabla tabla)
         {
-
+            if (!File.Exists(tabla.Ruta))
+            {
+                try
+                {
+                    FileStream BD = File.Create(tabla.Ruta);
+                    BD.Close();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error al crear el archivo: " + ex.ToString());
+                }
+            }
         }
     }
 }
