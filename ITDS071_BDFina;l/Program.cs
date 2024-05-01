@@ -13,7 +13,7 @@ namespace ITDS071_BDFina_l
     {
         public struct Tabla
         {
-            public Tabla(string nombre, string[] titulos, List<string> registros, string ruta)
+            public Tabla(string nombre, string[] titulos, List<string[]> registros, string ruta)
             {
                 Nombre = nombre;
                 Titulos = titulos;
@@ -23,7 +23,7 @@ namespace ITDS071_BDFina_l
 
             public string Nombre {  get; set; }
             public string[] Titulos { get; set; }
-            public List<String> Registros { get; set; }
+            public List<String[]> Registros { get; set; }
             public string Ruta { get; set; }
         };
             
@@ -33,31 +33,32 @@ namespace ITDS071_BDFina_l
             Tabla Ingredientes = new Tabla(
                 "Ingredientes",
                 new string[] {"ID", "Nombre", "Contenido", "Cantidad"},
-                new List<string> {},
+                new List<string[]> {},
                 Path.GetFullPath("..\\..\\Datos\\BD_Ingredientes.txt")
                 );
-            IngresarRegistrosATabla(Ingredientes);
+            LeerArchivo(Ingredientes);
 
             Tabla Platillos = new Tabla(
                 "Platillos",
                 new string[] { "ID", "Nombre", "Precio", "Costo" },
-                new List<string> { },
+                new List<string[]> { },
                 Path.GetFullPath("..\\..\\Datos\\BD_Platillos.txt")
                 );
-            IngresarRegistrosATabla(Platillos);
+            LeerArchivo(Platillos);
 
             Tabla Recetas = new Tabla(
                 "Recetas",
                 new string[] {"Platillo_ID", "Ingrediente_ID", "Cantidad"},
-                new List<string> { },
+                new List<string[]> { },
                 Path.GetFullPath("..\\..\\Datos\\BD_Recetas.txt")
                 );
-            IngresarRegistrosATabla(Recetas);
-
-            Console.WriteLine(Platillos.Ruta);
+            LeerArchivo(Recetas);
+            Console.ReadKey();
+            Console.WriteLine(Console.WindowWidth);
+            Console.ReadKey();
         }
 
-        static void IngresarRegistrosATabla(Tabla tabla)
+        static void LeerArchivo(Tabla tabla)
         {
             if (!File.Exists(tabla.Ruta))
             {
@@ -70,7 +71,17 @@ namespace ITDS071_BDFina_l
                 {
                     Console.WriteLine("Error al crear el archivo: " + ex.ToString());
                 }
+                return;
+            }
+            // Si ya existe el archivo, actualizar tabla.Registros con toda la informacion del archivo
+            string[] lineas = File.ReadAllLines(tabla.Ruta);
+            foreach (string linea in lineas)
+            {
+                string[] datos = linea.Split(',');
+                tabla.Registros.Add(datos);
             }
         }
+
+        
     }
 }
