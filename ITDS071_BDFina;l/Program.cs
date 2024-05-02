@@ -32,19 +32,19 @@ namespace ITDS071_BDFina_l
         {
             Tabla Ingredientes = new Tabla(
                 "Ingredientes",
-                new string[] {"ID", "Nombre", "Contenido", "Cantidad"},
-                new List<string[]> {},
+                new string[] {"Ingrediente_ID", "Nombre", "Contenido", "Cantidad"},
+                new List<string[]> { },
                 Path.GetFullPath("..\\..\\Datos\\BD_Ingredientes.txt")
                 );
-            LeerArchivo(Ingredientes);
+            leerArchivo(Ingredientes);
 
             Tabla Platillos = new Tabla(
                 "Platillos",
-                new string[] { "ID", "Nombre", "Precio", "Costo" },
+                new string[] { "Platillo_ID", "Nombre", "Precio", "Costo" },
                 new List<string[]> { },
                 Path.GetFullPath("..\\..\\Datos\\BD_Platillos.txt")
                 );
-            LeerArchivo(Platillos);
+            leerArchivo(Platillos);
 
             Tabla Recetas = new Tabla(
                 "Recetas",
@@ -52,13 +52,13 @@ namespace ITDS071_BDFina_l
                 new List<string[]> { },
                 Path.GetFullPath("..\\..\\Datos\\BD_Recetas.txt")
                 );
-            LeerArchivo(Recetas);
-            Console.ReadKey();
-            Console.WriteLine(Console.WindowWidth);
-            Console.ReadKey();
+            leerArchivo(Recetas);
+
+            dibujarTabla(Recetas, 1, 1);
+            Console.ReadKey(true);
         }
 
-        static void LeerArchivo(Tabla tabla)
+        static void leerArchivo(Tabla tabla)
         {
             if (!File.Exists(tabla.Ruta))
             {
@@ -82,6 +82,80 @@ namespace ITDS071_BDFina_l
             }
         }
 
-        
+        static void dibujarTabla(Tabla tabla, int x, int y)
+        {
+            // Dibujar Encabezado
+            int filaActual = y;
+            Console.SetCursorPosition(x, filaActual);
+            Console.Write($"{tabla.Nombre}");
+            filaActual++;
+
+            string bordeSuperior = "╔";
+            string titulosEnTabla = "║";
+            string bordeInferior = "╚";
+
+            string ultimo = tabla.Titulos.Last();
+            foreach (string titulo in tabla.Titulos)
+            {
+                if (titulo == ultimo)
+                {
+                    bordeSuperior += "═══════════════╗";
+                    if (titulo.Length >= 15) titulosEnTabla += titulo.Remove(15);
+                    else titulosEnTabla += titulo.PadRight(15, ' ');
+                    bordeInferior += "═══════════════╝";
+                }
+                else
+                {
+                    bordeSuperior += "═══════════════╦";
+                    if (titulo.Length >= 15) titulosEnTabla += titulo.Remove(15);
+                    else titulosEnTabla += titulo.PadRight(15, ' ');
+                    bordeInferior += "═══════════════╩";
+                }
+                titulosEnTabla += "║";
+            }
+            Console.SetCursorPosition(x, filaActual);
+            Console.Write(bordeSuperior);
+            filaActual++;
+            Console.SetCursorPosition(x, filaActual);
+            Console.Write(titulosEnTabla);
+            filaActual++;
+
+            // Dibujar registros
+            if (tabla.Registros.Count > 0)
+            {
+                string bordeRegistro = "╠";
+                string lineaRegistro = "║";
+                foreach (string[] registro in tabla.Registros)
+                {
+                    ultimo = registro.Last();
+                    foreach (string dato in registro)
+                    {
+                        if (dato == ultimo)
+                        {
+                            bordeRegistro += "═══════════════╣";
+                            if (dato.Length >= 15) lineaRegistro += dato.Remove(15);
+                            else lineaRegistro += dato.PadRight(15, ' ');
+                        }
+                        else
+                        {
+                            bordeRegistro += "═══════════════╬";
+                            if (dato.Length >= 15) lineaRegistro += dato.Remove(15);
+                            else lineaRegistro += dato.PadRight(15, ' ');
+                        }
+                        lineaRegistro += "║";
+                    }
+                }
+                Console.SetCursorPosition(x, filaActual);
+                Console.Write(bordeRegistro);
+                filaActual++;
+                Console.SetCursorPosition(x, filaActual);
+                Console.Write(lineaRegistro);
+                filaActual++;
+            }
+
+            // Dibujar borde inferior
+            Console.SetCursorPosition(x, filaActual);
+            Console.Write(bordeInferior);
+        }
     }
 }
