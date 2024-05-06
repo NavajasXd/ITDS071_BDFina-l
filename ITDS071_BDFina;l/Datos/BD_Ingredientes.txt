@@ -1,1 +1,5 @@
 1,Tomate,Kilo,10
+2,Lechuga,Kilo,2
+3,Queso,Kilo,50
+4,Papa,Litro,3
+5,Licor de Naranja,Litro,6
