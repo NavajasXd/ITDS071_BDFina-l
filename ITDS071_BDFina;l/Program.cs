@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Threading.Tasks;
+using static ITDS071_BDFina_l.Program;
 
 namespace ITDS071_BDFina_l
 {
@@ -57,20 +58,39 @@ namespace ITDS071_BDFina_l
                 );
             leerArchivo(Recetas);
 
+            Tabla Tablas = new Tabla(
+                "Tablas",
+                new string[] { "#", "Tabla" },
+                new List<string[]> { new string[] { "1", "Ingredientes" },
+                                     new string[] { "2", "Platillos"},
+                                     new string[] { "3", "Recetas"}
+                },
+                ""
+                );
+
             while (true)
             {
                 Console.Clear();
-                dibujarTabla(Ingredientes, 1, 1);
-                string tecla = Console.ReadLine();
-                if (tecla == "x")
+                int tablaSeleccionada = menuPrincipal(Tablas, 40, 8);
+                if (tablaSeleccionada == -1) break;
+                Console.Clear();
+                switch (tablaSeleccionada)
                 {
-                    eliminarRegistro(Ingredientes);
-                    Ingredientes.FilaSeleccionada = seleccionarRegistro(Ingredientes, 0);
-                    continue;
+                    case 0:
+                        menuTablas(Ingredientes);
+                        break;
+                    case 1:
+                        menuTablas(Platillos);
+                        break;
+                    case 2:
+                        menuTablas(Recetas);
+                        break;
+                    default:
+                        break;
                 }
-                int contador = int.Parse(tecla);
-                Ingredientes.FilaSeleccionada = seleccionarRegistro(Ingredientes, contador);
+            
             }
+        
         }
 
         static void leerArchivo(Tabla tabla)
@@ -172,7 +192,7 @@ namespace ITDS071_BDFina_l
             Console.Write(bordeInferior);
         }
 
-        static string[] agregarRegistro(Tabla tabla, int x, int y, char v)
+        static void agregarRegistro(Tabla tabla, int x, int y)
         {
             string[] datos = new string[tabla.Titulos.Length];
             for (int i = 0; i < tabla.Titulos.Length; i++)
@@ -188,9 +208,13 @@ namespace ITDS071_BDFina_l
                     datos[i] = Console.ReadLine();
                 }
             }
-            string linea = "\n" + string.Join(",", datos);
+            for (int i = 0; i < tabla.Registros.Count; i++)
+            {
+                if (datos[0] == tabla.Registros[i][0]) return;
+            }
+            string linea = string.Join(",", datos) + "\n";
             File.AppendAllText(tabla.Ruta, linea);
-            return datos;
+            tabla.Registros.Add(datos);
         }
 
         static int seleccionarRegistro(Tabla tabla, int contador)
@@ -208,7 +232,99 @@ namespace ITDS071_BDFina_l
 
         static void eliminarRegistro(Tabla tabla)
         {
+            if (tabla.Registros.Count == 0) return;
+            // Elimina el registro seleccionado del archivo
+            string[] lineas = File.ReadAllLines(tabla.Ruta);
+            List<string> nuevasLineas = new List<string>();
+            for (int i = 0; i < lineas.Length; i++)
+            {
+                if (i != tabla.FilaSeleccionada)
+                {
+                    nuevasLineas.Add(lineas[i]);
+                }
+            }
+            File.WriteAllLines(tabla.Ruta, nuevasLineas);
+
+            // Elimina el registro seleccionado de la tabla en memoria
             tabla.Registros.RemoveAt(tabla.FilaSeleccionada);
+        }
+
+        static void editarRegistro(Tabla tabla, int datoViejo, string datoNuevo)
+        {
+            tabla.Registros[tabla.FilaSeleccionada][datoViejo] = datoNuevo;
+            string[] lineas = File.ReadAllLines(tabla.Ruta);
+            string[] lineaNueva = lineas[tabla.FilaSeleccionada].Split(',');
+            lineaNueva[datoViejo] = datoNuevo;
+            lineas[tabla.FilaSeleccionada] = string.Join(",", lineaNueva);
+            File.WriteAllLines(tabla.Ruta, lineas);
+        }
+
+        static int menuPrincipal(Tabla Tablas, int x, int y)
+        {
+            Console.SetCursorPosition(1, 1);
+            Console.Write("Bienvenido careverga");
+            Console.SetCursorPosition(1, 2);
+            Console.Write("Escoja una base de datos a la que se quiera conectar");
+
+            ConsoleKeyInfo tecla;
+            while (true)
+            {
+                dibujarTabla(Tablas, 40, 10);
+                tecla = Console.ReadKey(true);
+                switch (tecla.Key)
+                {
+                    case ConsoleKey.UpArrow:
+                        Tablas.FilaSeleccionada = seleccionarRegistro(Tablas, -1);
+                        break;
+                    case ConsoleKey.DownArrow:
+                        Tablas.FilaSeleccionada = seleccionarRegistro(Tablas, 1);
+                        break;
+                    case ConsoleKey.Escape:
+                        return -1;
+                    case ConsoleKey.Enter:
+                        return Tablas.FilaSeleccionada;
+                    default:
+                        Console.SetCursorPosition(80, 1);
+                        Console.Write("Inserte una tecla válida");
+                        break;
+                }
+            }
+        }
+
+        static int menuTablas(Tabla tabla)
+        {
+            ConsoleKeyInfo tecla;
+
+            while(true)
+            {
+                Console.Clear();
+                dibujarTabla(tabla, 1, 1);
+                tecla = Console.ReadKey(true);
+                switch (tecla.Key)
+                {
+                    case ConsoleKey.Add:
+                        agregarRegistro(tabla, 80, 1);
+                        break;
+                    case ConsoleKey.Backspace:
+                        eliminarRegistro(tabla);
+                        break;
+                    case ConsoleKey.UpArrow:
+                        tabla.FilaSeleccionada = seleccionarRegistro(tabla, -1);
+                        break;
+                    case ConsoleKey.DownArrow:
+                        tabla.FilaSeleccionada = seleccionarRegistro(tabla, 1);
+                        break;
+                    case ConsoleKey.E:
+                        editarRegistro(tabla, 1, "1");
+                        break;
+                    case ConsoleKey.Escape:
+                        return 0;
+                    default:
+                        Console.SetCursorPosition(80, 1);
+                        Console.Write("Inserte una tecla válida");
+                        break;
+                }
+            }
         }
     }
 }
