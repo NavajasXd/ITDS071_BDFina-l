@@ -1,0 +1,2 @@
+1,Papa,Kilo,5,37
+2,Aceite de Aguacate,Litro,7,120

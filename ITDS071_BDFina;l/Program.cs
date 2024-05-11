@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.IO;
@@ -33,13 +34,13 @@ namespace ITDS071_BDFina_l
 
         public struct Opciones
         {
-            public Opciones(string nombre, string[] lista)
+            public Opciones(string[] lista)
             {
-                Nombre = nombre;
                 Lista = lista;
+                FilaSeleccionada = 0;
             }
-            public string Nombre { get; set; }
             public string[] Lista { get; set; }
+            public int FilaSeleccionada { get; set; }
         }
 
 
@@ -69,69 +70,83 @@ namespace ITDS071_BDFina_l
                 );
             leerArchivo(Recetas);
 
-            Tabla Tablas = new Tabla(
-                "Tablas",
-                new string[] { "#", "Tabla" },
-                new List<string[]> { new string[] { "1", "Ingredientes" },
-                                     new string[] { "2", "Platillos"},
-                                     new string[] { "3", "Recetas"}
-                },
-                ""
-                );
-
             Tabla[] Bases = new Tabla[] { Ingredientes, Platillos, Recetas };
+            Opciones Contenido = new Opciones(new string[] {"Kilo", "Litro"});
+            Opciones Tablas = new Opciones(new string[] { Ingredientes.Nombre, Platillos.Nombre, Recetas.Nombre });
 
             while (true)
             {
                 // Menu Principal
                 Console.Clear();
                 Console.SetCursorPosition(1, 1);
-                Console.Write("Bienvenido careverga");
+                Console.Write("Bienvenido");
                 Console.SetCursorPosition(1, 2);
                 Console.Write("Escoja una base de datos a la que se quiera conectar");
 
+                Tabla tablaSeleccionada = Ingredientes;
                 ConsoleKeyInfo tecla;
-                while (true)
+                Console.SetCursorPosition(40, 10);
+                string tabla = dibujarTabla(Tablas);
+
+                
+                switch (tabla)
                 {
-                    dibujarTabla(Tablas, 40, 10);
-                    tecla = Console.ReadKey(true);
-                    if (tecla.Key == ConsoleKey.Enter) break;
-                    switch (tecla.Key)
-                    {
-                        case ConsoleKey.UpArrow:
-                            Tablas.FilaSeleccionada = seleccionarRegistro(Tablas, -1);
-                            break;
-                        case ConsoleKey.DownArrow:
-                            Tablas.FilaSeleccionada = seleccionarRegistro(Tablas, 1);
-                            break;
-                        case ConsoleKey.Escape:
-                            return;
-                        default:
-                            Console.SetCursorPosition(80, 1);
-                            Console.Write("Inserte una tecla válida");
-                            break;
-                    }
+                    case "Ingredientes":
+                        tablaSeleccionada = Bases[0];
+                        break;
+                    case "Platillos":
+                        tablaSeleccionada = Bases[1];
+                        break;
+                    case "Recetas":
+                        tablaSeleccionada= Bases[2];
+                        break;
+                    case "":
+                        return;
                 }
 
-                Tabla tablaSeleccionada = Bases[Tablas.FilaSeleccionada];
+                Opciones campos = new Opciones(new string[tablaSeleccionada.Titulos.Count()]);
+                for (int i = 0; i < tablaSeleccionada.Titulos.Length; i++)
+                {
+                    campos.Lista[i] = tablaSeleccionada.Titulos[i];
+                }
 
                 // Menu de tabla
                 while (true)
                 {
+                    Opciones Platillo = actualizarOpciones(Platillos);
+                    Opciones Ingrediente = actualizarOpciones(Ingredientes);
                     Console.Clear();
-                    dibujarTabla(Bases[Tablas.FilaSeleccionada], 1, 1);
+                    calcularCostos(Ingredientes, Recetas, Platillos);
+                    dibujarTabla(tablaSeleccionada, 1, 1);
                     tecla = Console.ReadKey(true);
                     if (tecla.Key == ConsoleKey.Escape) break;
                     switch (tecla.Key)
                     {
                         case ConsoleKey.UpArrow:
-                            tablaSeleccionada.FilaSeleccionada = seleccionarRegistro(tablaSeleccionada, 1);
-                            break;
-                        case ConsoleKey.DownArrow:
                             tablaSeleccionada.FilaSeleccionada = seleccionarRegistro(tablaSeleccionada, -1);
                             break;
-                        case ConsoleKey.Add:
-                            agregarRegistro(tablaSeleccionada, 80, 1);
+                        case ConsoleKey.DownArrow:
+                            tablaSeleccionada.FilaSeleccionada = seleccionarRegistro(tablaSeleccionada, 1);
+                            break;
+                        case ConsoleKey.A:
+                            if (tablaSeleccionada.Nombre == "Recetas") agregarRegistro(tablaSeleccionada, 83, 1, Platillo, Ingrediente, Platillos, Ingredientes);
+                            else agregarRegistro(tablaSeleccionada, 83, 1, Contenido, Platillo);
+                            break;
+                        case ConsoleKey.E:
+                            Console.SetCursorPosition(83, 1);
+                            string campo = dibujarTabla(campos);
+                            int campoID = 0;
+                            for (int i = 0; i < tablaSeleccionada.Titulos.Length; i++)
+                            {
+                                if(campo == tablaSeleccionada.Titulos[i])
+                                {
+                                    campoID = i; break;
+                                }
+                            }
+                            Console.SetCursorPosition(83, 2);
+                            Console.Write("Inserte el nuevo dato");
+                            string nuevoDato = Console.ReadLine();
+                            editarRegistro(tablaSeleccionada, campoID, nuevoDato);
                             break;
                         case ConsoleKey.Backspace:
                             eliminarRegistro(tablaSeleccionada);
@@ -232,7 +247,7 @@ namespace ITDS071_BDFina_l
                 foreach (string dato in registro)
                 {
                     string datoFinal = dato;
-                    if (datoFinal.Length >= 15) datoFinal = datoFinal.Remove(15);
+                    if (datoFinal.Length > 15) datoFinal = datoFinal.Remove(15);
                     Console.Write($"{datoFinal.PadRight(15, ' ')}║");
                 }
                 filaActual++;
@@ -245,32 +260,174 @@ namespace ITDS071_BDFina_l
             Console.Write(bordeInferior);
         }
 
-        static void dibujarTabla(Opciones opciones)
+        static string dibujarTabla(Opciones opciones)
         {
             int x = Console.CursorLeft;
             int y = Console.CursorTop;
+            int filaActual;
+            ConsoleKeyInfo tecla;
+
+            while (true)
+            {
+                filaActual = y;
+
+                // Borde superior
+                Console.SetCursorPosition(x, filaActual);
+                Console.Write("╔════════════════════╗");
+                filaActual++;
+                // Opciones
+                int indiceOpcion = 0;
+                foreach (string dato in opciones.Lista)
+                {
+                    if (indiceOpcion == opciones.FilaSeleccionada) Console.BackgroundColor = ConsoleColor.DarkBlue;
+                    Console.SetCursorPosition(x, filaActual);
+                    string datoFinal = dato;
+                    if (datoFinal.Length >= 20) datoFinal = datoFinal.Remove(20);
+                    Console.Write($"║{datoFinal.PadRight(20, ' ')}║");
+                    filaActual++;
+                    indiceOpcion++;
+                    Console.ResetColor();
+                }
+                // Borde inferior
+                Console.SetCursorPosition(x, filaActual);
+                Console.Write("╚════════════════════╝");
+
+                tecla = Console.ReadKey();
+
+                if (tecla.Key == ConsoleKey.Enter) break;
+                if (tecla.Key == ConsoleKey.Escape) return "";
+                switch(tecla.Key)
+                {
+                    case ConsoleKey.UpArrow:
+                        opciones.FilaSeleccionada = seleccionarRegistro(opciones, -1);
+                        break;
+                    case ConsoleKey.DownArrow:
+                        opciones.FilaSeleccionada = seleccionarRegistro(opciones, 1);
+                        break;
+                }
+            }
+
+            // Limpiar espacio en tabla
+            filaActual = y;
+            Console.SetCursorPosition(x, filaActual);
+            Console.Write("                      ");
+            filaActual++;
+            foreach(string dato in opciones.Lista)
+            {
+                Console.SetCursorPosition(x, filaActual);
+                Console.Write("                      ");
+                filaActual++;
+            }
+            Console.SetCursorPosition(x, filaActual);
+            Console.Write("                      ");
+            // Escribir registro agregado en la seccion de utilidades
+            filaActual = y;
+            Console.SetCursorPosition(x, filaActual);
+            Console.Write($"");
+
+            return opciones.Lista[opciones.FilaSeleccionada];
         }
 
-        static void agregarRegistro(Tabla tabla, int x, int y)
+        static void agregarRegistro(Tabla tabla, int x, int y, Opciones opciones1, Opciones opciones2, Tabla platillosAuxiliar = new Tabla(), Tabla ingredientesAuxiliar = new Tabla())
         {
             string[] datos = new string[tabla.Titulos.Length];
-            for (int i = 0; i < tabla.Titulos.Length; i++)
+
+            if(tabla.Nombre == "Recetas")
             {
-                if (tabla.Titulos[i] == "Costo")
+                for(int i = 0; i < tabla.Titulos.Length; i++)
                 {
-                    datos[i] = "0";
-                }
-                else
-                {
-                    Console.SetCursorPosition(x, y + i);
-                    Console.Write($"{tabla.Titulos[i]}: ");
-                    datos[i] = Console.ReadLine();
+                    if (tabla.Titulos[i] == "Platillo_ID")
+                    {
+                        Console.SetCursorPosition(x, y + i);
+                        string dato = dibujarTabla(opciones1);
+                        foreach (string[] platillo in platillosAuxiliar.Registros)
+                        {
+                            if(dato == platillo[1])
+                            {
+                                datos[i] = platillo[0];
+                                break;
+                            }
+                        }
+                        Console.Write($"{tabla.Titulos[i]}: {datos[i]}");
+                    }
+                    else if (tabla.Titulos[i] == "Ingrediente_ID")
+                    {
+                        Console.SetCursorPosition(x, y + i);
+                        string dato = dibujarTabla(opciones2);
+                        foreach (string[] ingrediente in ingredientesAuxiliar.Registros)
+                        {
+                            if(dato == ingrediente[1])
+                            {
+                                datos[i] = ingrediente[0];
+                            }
+                        }
+                        Console.Write($"{tabla.Titulos[i]}: {datos[i]}");
+                    }
+                    else
+                    {
+                        while (true)
+                        {
+                            Console.SetCursorPosition(x, y + i);
+                            Console.Write($"{tabla.Titulos[i]}: ");
+                            string dato = Console.ReadLine();
+                            double datoNumerico;
+                            if (double.TryParse(dato, out datoNumerico))
+                            {
+                                datos[i] = dato;
+                                break;
+                            }
+                            else
+                            {
+                                Console.SetCursorPosition(x, 20);
+                                Console.Write("Inserte unicamente valores numericos");
+                            }
+                        }
+                    }
                 }
             }
-            for (int i = 0; i < tabla.Registros.Count; i++)
+            else
             {
-                if (datos[0] == tabla.Registros[i][0]) return;
+                for (int i = 0; i < tabla.Titulos.Length; i++)
+                {
+                    if (tabla.Titulos[i] == "Costo")
+                    {
+                        datos[i] = "0";
+                    }
+                    else if (tabla.Titulos[i] == "Contenido")
+                    {
+                        Console.SetCursorPosition(x, y + i);
+                        datos[i] = dibujarTabla(opciones1);
+                        Console.Write($"{tabla.Titulos[i]}: {datos[i]}");
+                    }
+                    else if (tabla.Titulos[i] == "Costo/Cantidad")
+                    {
+                        while(true)
+                        {
+                            Console.SetCursorPosition(x, y + i);
+                            Console.Write($"{tabla.Titulos[i]}: ");
+                            string dato = Console.ReadLine();
+                            double datoNumerico;
+                            if (double.TryParse(dato, out datoNumerico))
+                            {
+                                datos[i] = dato;
+                                break;
+                            }
+                            else
+                            {
+                                Console.SetCursorPosition(x, 20);
+                                Console.Write("Inserte unicamente valores numericos");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Console.SetCursorPosition(x, y + i);
+                        Console.Write($"{tabla.Titulos[i]}: ");
+                        datos[i] = Console.ReadLine();
+                    }
+                }
             }
+
             string linea = string.Join(",", datos) + "\n";
             File.AppendAllText(tabla.Ruta, linea);
             tabla.Registros.Add(datos);
@@ -281,6 +438,19 @@ namespace ITDS071_BDFina_l
             int cantidadDeRegistros = tabla.Registros.Count();
             if (cantidadDeRegistros == 0) return 0;
             int filaSeleccionada = tabla.FilaSeleccionada;
+            filaSeleccionada += contador;
+
+            if (filaSeleccionada < 0) filaSeleccionada = cantidadDeRegistros - 1;
+            filaSeleccionada = filaSeleccionada % cantidadDeRegistros;
+
+            return filaSeleccionada;
+        }
+
+        static int seleccionarRegistro(Opciones opciones, int contador)
+        {
+            int cantidadDeRegistros = opciones.Lista.Length;
+            if (cantidadDeRegistros == 0) return 0;
+            int filaSeleccionada = opciones.FilaSeleccionada;
             filaSeleccionada += contador;
 
             if (filaSeleccionada < 0) filaSeleccionada = cantidadDeRegistros - 1;
@@ -316,6 +486,43 @@ namespace ITDS071_BDFina_l
             lineaNueva[datoViejo] = datoNuevo;
             lineas[tabla.FilaSeleccionada] = string.Join(",", lineaNueva);
             File.WriteAllLines(tabla.Ruta, lineas);
+        }
+
+        static void calcularCostos(Tabla Ingredientes, Tabla Recetas, Tabla Platillos)
+        {
+            // registro = [platillo_id, nombre, precio, costo]
+            // ingrediente = [ingrediente_id, nombre, contenido, cantidad, precio/cantidad]
+            // receta = [platillo_id, ingrediente_id, cantidad]
+            foreach (string[] registro in Platillos.Registros)
+            {
+                double costo = 0;
+                foreach (string[] receta in Recetas.Registros)
+                {
+                    if (registro[0] == receta[0])
+                    {
+                        foreach(string[] ingrediente in Ingredientes.Registros)
+                        {
+                            if (receta[1] == ingrediente[0])
+                            {
+                                double costoXCantidad = double.Parse(ingrediente[4]);
+                                double cantidad = double.Parse(receta[2]);
+                                costo += costoXCantidad * cantidad;
+                            }
+                        }
+                    }
+                }
+                registro[3] = costo.ToString();
+            }
+        }
+
+        static Opciones actualizarOpciones(Tabla tabla)
+        {
+            Opciones opciones = new Opciones(new string[tabla.Registros.Count]);
+            for(int i = 0; i < tabla.Registros.Count; i++)
+            {
+                opciones.Lista[i] = tabla.Registros[i][1];
+            }
+            return opciones;
         }
     }
 }
