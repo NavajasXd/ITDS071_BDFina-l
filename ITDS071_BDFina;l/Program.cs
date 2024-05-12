@@ -82,6 +82,8 @@ namespace ITDS071_BDFina_l
                 Console.Write("Bienvenido");
                 Console.SetCursorPosition(1, 2);
                 Console.Write("Escoja una base de datos a la que se quiera conectar");
+                Console.SetCursorPosition(1, Console.WindowHeight - 1);
+                Console.Write("[Up-Arrow] Seleccionar [Down-Arrow] Seleccionar [Enter] Entrar [Escape] Salir");
 
                 Tabla tablaSeleccionada = Ingredientes;
                 ConsoleKeyInfo tecla;
@@ -118,6 +120,8 @@ namespace ITDS071_BDFina_l
                     Console.Clear();
                     calcularCostos(Ingredientes, Recetas, Platillos);
                     dibujarTabla(tablaSeleccionada, 1, 1);
+                    Console.SetCursorPosition(1, Console.WindowHeight - 1);
+                    Console.Write("[Up-Arrow] Seleccionar [Down-Arrow] Seleccionar [+] Agregar [E] Editar [Backspace] Eliminar [Escape] Salir");
                     tecla = Console.ReadKey(true);
                     if (tecla.Key == ConsoleKey.Escape) break;
                     switch (tecla.Key)
@@ -128,7 +132,7 @@ namespace ITDS071_BDFina_l
                         case ConsoleKey.DownArrow:
                             tablaSeleccionada.FilaSeleccionada = seleccionarRegistro(tablaSeleccionada, 1);
                             break;
-                        case ConsoleKey.A:
+                        case ConsoleKey.Add:
                             if (tablaSeleccionada.Nombre == "Recetas") agregarRegistro(tablaSeleccionada, 83, 1, Platillo, Ingrediente, Platillos, Ingredientes);
                             else agregarRegistro(tablaSeleccionada, 83, 1, Contenido, Platillo);
                             break;
@@ -155,8 +159,8 @@ namespace ITDS071_BDFina_l
                             Console.SetCursorPosition(80, 1);
                             Console.Write("Inserte una tecla valida");
                             break;
-                    }
 
+                    }
                 }
             }
         }
